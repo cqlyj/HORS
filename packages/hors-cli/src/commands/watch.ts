@@ -15,7 +15,7 @@ export async function watchCommand(): Promise<void> {
   if (!existsSync(TRACE_PATH)) {
     console.log(
       chalk.dim(
-        `Waiting for ${TRACE_PATH}… (make a call via \`hors mcp\` to create it)`,
+        `Waiting for ${TRACE_PATH}… (make a call via \`hors call\` to create it)`,
       ),
     );
   } else {
