@@ -1,4 +1,4 @@
-export { createHORSClient } from "./client.js";
+export { createHORSClient, extractHorsMeta } from "./client.js";
 export type { HORSClient, HORSClientConfig } from "./client.js";
 export { discoverHORSService } from "./discover.js";
 export type { HORSServiceInfo } from "./discover.js";

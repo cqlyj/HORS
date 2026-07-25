@@ -1,6 +1,8 @@
 import type { Hex } from "viem";
+import { HORS_META_KEY, type HORSDiagnosticMeta } from "hors-core";
 import {
   isJSONRPCRequest,
+  isJSONRPCResponse,
   type Transport,
   type JSONRPCMessage,
   type TransportSendOptions,
@@ -21,6 +23,38 @@ export interface HORSClientConfig {
 
 export interface HORSClient {
   wrapTransport(transport: Transport): Transport;
+  readonly lastDiagnostic: HORSDiagnosticMeta | undefined;
+}
+
+/** Extract `_meta.hors` from a CallToolResult (or any MCP result object). */
+export function extractHorsMeta(
+  result: unknown,
+): HORSDiagnosticMeta | undefined {
+  if (!result || typeof result !== "object") return undefined;
+  const meta = (result as { _meta?: Record<string, unknown> })._meta;
+  if (!meta || typeof meta !== "object") return undefined;
+  const hors = meta[HORS_META_KEY];
+  if (!hors || typeof hors !== "object") return undefined;
+  return hors as HORSDiagnosticMeta;
+}
+
+function extractFromJsonRpcMessage(
+  message: JSONRPCMessage,
+): HORSDiagnosticMeta | undefined {
+  if (!isJSONRPCResponse(message)) return undefined;
+  const result = (message as { result?: unknown }).result;
+  const fromResult = extractHorsMeta(result);
+  if (fromResult) return fromResult;
+
+  // Deny paths put diagnostic meta on ProtocolError.data
+  const error = (message as { error?: { data?: unknown } }).error;
+  if (error?.data && typeof error.data === "object") {
+    const data = error.data as Record<string, unknown>;
+    if (data.hors && typeof data.hors === "object") {
+      return data.hors as HORSDiagnosticMeta;
+    }
+  }
+  return undefined;
 }
 
 class HORSTransport implements Transport {
@@ -91,7 +125,12 @@ class HORSTransport implements Transport {
 }
 
 export function createHORSClient(config: HORSClientConfig): HORSClient {
+  let lastDiagnostic: HORSDiagnosticMeta | undefined;
+
   return {
+    get lastDiagnostic() {
+      return lastDiagnostic;
+    },
     wrapTransport(transport: Transport): Transport {
       const wrapped = new HORSTransport(transport, config);
 
@@ -109,6 +148,10 @@ export function createHORSClient(config: HORSClientConfig): HORSClient {
 
       const origOnmessage = transport.onmessage;
       transport.onmessage = (message, extra) => {
+        const diagnostic = extractFromJsonRpcMessage(message);
+        if (diagnostic) {
+          lastDiagnostic = diagnostic;
+        }
         origOnmessage?.(message, extra);
         wrapped.onmessage?.(message, extra);
       };
