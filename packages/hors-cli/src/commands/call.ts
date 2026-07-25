@@ -8,10 +8,15 @@ import {
 } from "@modelcontextprotocol/client";
 import { createHORSClient, extractHorsMeta } from "hors-client";
 import type { HORSDiagnosticMeta } from "hors-core";
+import type { PrivateKeyAccount } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { loadKeystore } from "../profile/keystore.js";
 import { readProfile, readServicesCache } from "../profile/store.js";
 import { extractAssuranceChallenge } from "../shared/assurance.js";
+import {
+  completeSelfieChallenge,
+  isSelfieChallenge,
+} from "../shared/selfie-qr.js";
 import { writeTraceEvent } from "../trace/write.js";
 
 function textFromResult(result: unknown): string {
@@ -29,6 +34,77 @@ function metaFromError(err: unknown): HORSDiagnosticMeta | undefined {
   if (!err || typeof err !== "object") return undefined;
   const data = (err as { data?: { hors?: HORSDiagnosticMeta } }).data;
   return data?.hors;
+}
+
+async function invokeRemoteCall(opts: {
+  service: string;
+  functionName: string;
+  toolArgs: Record<string, unknown>;
+  endpoint: string;
+  domain: string;
+  account: PrivateKeyAccount;
+  proof?: string;
+  requestState?: string;
+}): Promise<{
+  value: unknown;
+  hors: ReturnType<typeof createHORSClient>;
+}> {
+  const hors = createHORSClient({
+    signer: {
+      address: opts.account.address,
+      signMessage: (args) =>
+        opts.account.signMessage({ message: args.message }),
+    },
+    domain: opts.domain,
+  });
+
+  const client = new Client(
+    { name: "hors-cli", version: "0.1.0" },
+    {
+      versionNegotiation: { mode: "auto" },
+      capabilities: {
+        elicitation: { form: {} },
+      },
+      // Surface step-up challenges to the CLI instead of auto-looping.
+      inputRequired: { autoFulfill: false },
+    },
+  );
+
+  try {
+    await client.connect(
+      hors.wrapTransport(
+        new StreamableHTTPClientTransport(new URL(opts.endpoint)),
+      ),
+    );
+
+    const resultSchema = withInputRequired(specTypeSchemas.CallToolResult);
+    const value = await client.request(
+      {
+        method: "tools/call",
+        params: {
+          name: opts.functionName,
+          arguments: opts.toolArgs,
+          ...(opts.proof && opts.requestState
+            ? {
+                inputResponses: {
+                  assurance: {
+                    action: "accept",
+                    content: { proofPayload: opts.proof },
+                  },
+                },
+                requestState: opts.requestState,
+              }
+            : {}),
+        },
+      },
+      resultSchema,
+      { allowInputRequired: true },
+    );
+
+    return { value, hors };
+  } finally {
+    await client.close();
+  }
 }
 
 export async function callCommand(
@@ -75,14 +151,6 @@ export async function callCommand(
   const account = privateKeyToAccount(privateKey);
   const domain = service.includes(".") ? service : "localhost";
 
-  const hors = createHORSClient({
-    signer: {
-      address: account.address,
-      signMessage: (args) => account.signMessage({ message: args.message }),
-    },
-    domain,
-  });
-
   writeTraceEvent({
     ts: new Date().toISOString(),
     type: "request",
@@ -92,48 +160,78 @@ export async function callCommand(
     agent: "hors-cli",
   });
 
-  const client = new Client(
-    { name: "hors-cli", version: "0.1.0" },
-    {
-      versionNegotiation: { mode: "auto" },
-      capabilities: {
-        elicitation: { form: {} },
-      },
-      // Surface step-up challenges to the CLI instead of auto-looping.
-      inputRequired: { autoFulfill: false },
-    },
-  );
-
   try {
-    await client.connect(
-      hors.wrapTransport(
-        new StreamableHTTPClientTransport(new URL(entry.endpoint)),
-      ),
-    );
+    let activeProof = proof;
+    let activeState = requestState;
+    let { value, hors } = await invokeRemoteCall({
+      service,
+      functionName,
+      toolArgs,
+      endpoint: entry.endpoint,
+      domain,
+      account,
+      proof: activeProof,
+      requestState: activeState,
+    });
 
-    const resultSchema = withInputRequired(specTypeSchemas.CallToolResult);
-    const value = await client.request(
-      {
-        method: "tools/call",
-        params: {
-          name: functionName,
-          arguments: toolArgs,
-          ...(proof && requestState
-            ? {
-                inputResponses: {
-                  assurance: {
-                    action: "accept",
-                    content: { proofPayload: proof },
-                  },
-                },
-                requestState,
-              }
-            : {}),
-        },
-      },
-      resultSchema,
-      { allowInputRequired: true },
-    );
+    if (isInputRequiredResult(value) && !activeProof) {
+      const meta = hors.lastDiagnostic;
+      const challenge = extractAssuranceChallenge(value.inputRequests);
+      const state = value.requestState;
+
+      writeTraceEvent({
+        ts: new Date().toISOString(),
+        type: "response",
+        service,
+        function: functionName,
+        caller: account.address,
+        agent: "hors-cli",
+        meta,
+      });
+
+      const interactive =
+        Boolean(process.stdout.isTTY) && isSelfieChallenge(challenge);
+      if (!interactive) {
+        console.log(chalk.yellow("Step-up required"));
+        console.log(
+          JSON.stringify(
+            {
+              challenge,
+              requestState: state,
+              instruction:
+                "Re-run this exact `hors call` in your visible terminal to scan the World App QR, or complete externally and pass --proof / --request-state.",
+              meta,
+            },
+            null,
+            2,
+          ),
+        );
+        return;
+      }
+
+      activeProof = await completeSelfieChallenge(challenge);
+      activeState = state;
+
+      writeTraceEvent({
+        ts: new Date().toISOString(),
+        type: "request",
+        service,
+        function: functionName,
+        caller: account.address,
+        agent: "hors-cli",
+      });
+
+      ({ value, hors } = await invokeRemoteCall({
+        service,
+        functionName,
+        toolArgs,
+        endpoint: entry.endpoint,
+        domain,
+        account,
+        proof: activeProof,
+        requestState: activeState,
+      }));
+    }
 
     if (isInputRequiredResult(value)) {
       const meta = hors.lastDiagnostic;
@@ -211,7 +309,7 @@ export async function callCommand(
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    const meta = metaFromError(err) ?? hors.lastDiagnostic;
+    const meta = metaFromError(err);
     writeTraceEvent({
       ts: new Date().toISOString(),
       type: "error",
@@ -225,7 +323,5 @@ export async function callCommand(
     console.error(chalk.red(message));
     if (meta) console.error(chalk.dim(`_meta.hors: ${JSON.stringify(meta)}`));
     process.exitCode = 1;
-  } finally {
-    await client.close();
   }
 }
