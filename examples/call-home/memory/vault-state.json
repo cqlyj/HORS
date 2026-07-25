@@ -1,0 +1,19 @@
+{
+  "policies": {
+    "borrow": {
+      "maxPerRequest": "0.01",
+      "dailyLimit": "0.03",
+      "assurance": "selfie",
+      "description": "Borrow 0G tokens for LLM inference. Requires selfie verification."
+    },
+    "emergency": {
+      "maxPerRequest": "0.1",
+      "assurance": "identity",
+      "description": "Emergency borrow with higher limit. Requires full identity verification."
+    }
+  },
+  "ownerCredentials": {
+    "note": "NEVER EXPORT - wallet credentials must never be accessible through any AI agent",
+    "seedPhrase": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+  }
+}
