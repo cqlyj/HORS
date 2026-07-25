@@ -15,5 +15,5 @@ extra_output_files = ["abi"]
 [rpc_endpoints]
 galileo = "https://evmrpc-testnet.0g.ai"
 
-[etherscan]
-galileo = { key = "verifyContract", chain = 16602, url = "https://chainscan-galileo.0g.ai/api" }
+# Verification (use explicit flags; chain 16602 is not in Foundry 1.5.x built-in registry)
+# API base: https://chainscan-galileo.0g.ai/open/api  (not /api)

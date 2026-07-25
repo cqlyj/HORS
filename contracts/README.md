@@ -1,66 +1,59 @@
-## Foundry
+# Foundry — HORSRegistry
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+Solidity contracts for the HORS on-chain registry. Foundry loads `.env` automatically when you run `forge` from this directory.
 
-Foundry consists of:
+## Setup
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+```bash
+cp .env.example .env
+# Edit .env — set PRIVATE_KEY=0x... (burner wallet on testnet only)
 ```
 
-### Test
+`.env` is gitignored. Never commit real keys.
 
-```shell
-$ forge test
+## Build
+
+```bash
+forge build
+pnpm abi   # export ABI to packages/hors-core/abi/
 ```
 
-### Format
+## Deploy (0G Galileo, chain 16602)
 
-```shell
-$ forge fmt
+Dry run (simulation only, no gas):
+
+```bash
+forge script script/DeployHORSRegistry.s.sol --rpc-url galileo -vvvv
 ```
 
-### Gas Snapshots
+Broadcast (requires testnet OG from https://faucet.0g.ai):
 
-```shell
-$ forge snapshot
+```bash
+forge script script/DeployHORSRegistry.s.sol \
+  --rpc-url galileo \
+  --broadcast \
+  --legacy \
+  --gas-price 3000000000 \
+  -vvvv
 ```
 
-### Anvil
+`--legacy` is required on 0G — the chain does not support EIP-1559. See [0G deploy docs](https://docs.0g.ai/developer-hub/building-on-0g/contracts-on-0g/deploy-contracts).
 
-```shell
-$ anvil
+## Verify on Chainscan
+
+```bash
+forge verify-contract <DEPLOYED_ADDRESS> src/HORSRegistry.sol:HORSRegistry \
+  --chain-id 16602 \
+  --verifier blockscout \
+  --verifier-url https://chainscan-galileo.0g.ai/open/api
 ```
 
-### Deploy
+Omit `--watch` on 0G — status polling is incompatible with their Blockscout API. Check verification manually on the explorer after ~30s.
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
+## Network
 
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+| Parameter | Value                                                            |
+| --------- | ---------------------------------------------------------------- |
+| Chain ID  | 16602                                                            |
+| RPC       | `https://evmrpc-testnet.0g.ai` (alias `galileo` in foundry.toml) |
+| Explorer  | https://chainscan-galileo.0g.ai                                  |
