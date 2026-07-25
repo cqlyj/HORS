@@ -5,7 +5,8 @@
   "scripts": {
     "build": "turbo run build",
     "check-types": "turbo run check-types",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "hors": "node packages/hors-cli/dist/cli.js"
   },
   "devDependencies": {
     "turbo": "^2.10.6",
