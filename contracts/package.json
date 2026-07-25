@@ -1,0 +1,10 @@
+{
+  "name": "hors-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "forge build",
+    "clean": "forge clean",
+    "abi": "forge inspect src/HORSRegistry.sol:HORSRegistry abi --json > ../packages/hors-core/abi/HORSRegistry.json"
+  }
+}
