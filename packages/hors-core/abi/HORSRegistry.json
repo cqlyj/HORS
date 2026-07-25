@@ -1,0 +1,397 @@
+[
+  {
+    "type": "function",
+    "name": "getPolicies",
+    "inputs": [
+      {
+        "name": "serviceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple[]",
+        "internalType": "struct HORSRegistry.PolicyEntry[]",
+        "components": [
+          {
+            "name": "functionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "origin",
+            "type": "uint8",
+            "internalType": "enum HORSRegistry.Origin"
+          },
+          {
+            "name": "assurance",
+            "type": "uint8",
+            "internalType": "enum HORSRegistry.Assurance"
+          },
+          {
+            "name": "executor",
+            "type": "uint8",
+            "internalType": "enum HORSRegistry.Executor"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPolicyCount",
+    "inputs": [
+      {
+        "name": "serviceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getService",
+    "inputs": [
+      {
+        "name": "serviceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct HORSRegistry.ServiceRecord",
+        "components": [
+          {
+            "name": "owner",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "policyVersion",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "humanOrigin",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "policyStorageRoot",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "policyContentHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "updatedAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "registerService",
+    "inputs": [
+      {
+        "name": "ensName",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "humanOrigin",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "policyStorageRoot",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "policyContentHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "entries",
+        "type": "tuple[]",
+        "internalType": "struct HORSRegistry.PolicyEntry[]",
+        "components": [
+          {
+            "name": "functionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "origin",
+            "type": "uint8",
+            "internalType": "enum HORSRegistry.Origin"
+          },
+          {
+            "name": "assurance",
+            "type": "uint8",
+            "internalType": "enum HORSRegistry.Assurance"
+          },
+          {
+            "name": "executor",
+            "type": "uint8",
+            "internalType": "enum HORSRegistry.Executor"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "serviceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "services",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "policyVersion",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "humanOrigin",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "policyStorageRoot",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "policyContentHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "updatedAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "inputs": [
+      {
+        "name": "serviceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updatePolicy",
+    "inputs": [
+      {
+        "name": "serviceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "newStorageRoot",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "newContentHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "entries",
+        "type": "tuple[]",
+        "internalType": "struct HORSRegistry.PolicyEntry[]",
+        "components": [
+          {
+            "name": "functionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "origin",
+            "type": "uint8",
+            "internalType": "enum HORSRegistry.Origin"
+          },
+          {
+            "name": "assurance",
+            "type": "uint8",
+            "internalType": "enum HORSRegistry.Assurance"
+          },
+          {
+            "name": "executor",
+            "type": "uint8",
+            "internalType": "enum HORSRegistry.Executor"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "serviceId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PolicyUpdated",
+    "inputs": [
+      {
+        "name": "serviceId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "policyVersion",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ServiceRegistered",
+    "inputs": [
+      {
+        "name": "serviceId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "owner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "EmptyPolicies",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotOwner",
+    "inputs": [
+      {
+        "name": "serviceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ServiceAlreadyRegistered",
+    "inputs": [
+      {
+        "name": "serviceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ServiceNotFound",
+    "inputs": [
+      {
+        "name": "serviceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ZeroAddress",
+    "inputs": []
+  }
+]
