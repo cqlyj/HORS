@@ -26,7 +26,7 @@ export function renderTraceEvent(event: TraceEvent): string {
         : chalk.green("--- HORS RESPONSE ---");
 
   lines.push(header);
-  lines.push(row("Agent", event.agent ?? "hors-mcp"));
+  lines.push(row("Agent", event.agent ?? "hors-cli"));
   if (event.caller) lines.push(row("Wallet", event.caller));
   lines.push(row("Service", event.service));
   lines.push(row("Function", event.function));
