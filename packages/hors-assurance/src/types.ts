@@ -17,6 +17,9 @@ export interface AssuranceChallenge {
   attributes?: IdentityAttribute[];
   /** IDKit preset param name: "signal" for selfie, "legacy_signal" for identity. */
   signalParamName?: string;
+  /** World App IDKit app id (`app_…`) for client QR / deep-link handoff. */
+  appId?: string;
+  environment?: "production" | "staging";
 }
 
 export interface AssuranceResult {

@@ -36,6 +36,8 @@ export function createIdentityAdapter(
         rpContext,
         attributes,
         signalParamName: "legacy_signal",
+        ...(config.appId ? { appId: config.appId } : {}),
+        ...(config.environment ? { environment: config.environment } : {}),
       };
     },
 

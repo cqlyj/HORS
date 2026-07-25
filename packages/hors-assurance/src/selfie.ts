@@ -35,6 +35,8 @@ export function createSelfieAdapter(
         signalHash: signal ? hashSignal(signal).toString() : undefined,
         rpContext,
         signalParamName: "signal",
+        ...(config.appId ? { appId: config.appId } : {}),
+        ...(config.environment ? { environment: config.environment } : {}),
       };
     },
 
