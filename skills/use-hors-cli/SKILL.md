@@ -138,33 +138,35 @@ resumed call.
 
 ### 7. Present the demo result
 
-For the standard project-resume demo, use this sequence after the service name
-is known:
+For the Call Home vault demo, use this sequence after the service name is known.
+If `hors list-functions` reports no serviceId, cache it first from the example
+`.env` (`HORS_SERVICE_ID` / `HORS_REGISTRY_ADDRESS`) via
+`hors services <service> --service-id <hex> --registry <hex>`, then refresh:
 
 ```bash
 hors status
 hors services <service>
 hors list-functions <service> --refresh
-hors call <service> project.resume '{"repository":"hors"}'
+hors call <service> home.balance '{}'
 ```
 
 Explain the boundary accurately: the user performed World App registration;
 the agent then discovered the service, inspected policy, signed the exact call,
 and invoked it through the CLI.
 
-For the private-project Selfie gate demo, use the documented `question` field,
-not `decision`. If the user only wants to test the Selfie gate and does not care
-about the decision text, use the benign question below without repeatedly
-asking for content. After confirming the function policy requires Selfie, give
-this command to the user; do not run it as the agent:
+For Call Home assurance-gated demos (`home.borrow` selfie, `home.emergency`
+identity), after confirming the policy, give the command to the user; do not
+run it as the agent (the human must complete the QR step-up in a visible TTY):
 
 ```bash
-hors call openagents.eth project.evaluateDecision '{"question":"Test the HORS selfie assurance flow. Do not make or publish a real decision."}'
+hors call openagents.eth home.borrow '{"recipientAddress":"0xYourFreshWallet"}'
+# or
+hors call openagents.eth home.emergency '{"recipientAddress":"0xYourFreshWallet","amount":"0.1","reason":"..."}'
 ```
 
-The expected result for the current direct CLI is `Step-up required` with
-`requireAssurance: selfie`. Do not claim `HORS_EXECUTED` unless a human-facing
-assurance flow actually completes and the resumed call returns that status.
+In a visible terminal the CLI should render a World App QR and wait. Do not
+claim `HORS_EXECUTED` unless that flow completes and the resumed call returns
+that status.
 
 Use `hors watch` only when the user wants a live trace terminal. It is
 long-running. Never run `hors disconnect` without explicit confirmation because
