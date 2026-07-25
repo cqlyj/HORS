@@ -398,7 +398,7 @@ export function startMcpBridge(): void {
           function: z
             .string()
             .describe(
-              "Function name on the remote service (e.g. project.resume, project.evaluateDecision)",
+              "Function name on the remote service (e.g. home.balance, home.borrow)",
             ),
           arguments: z
             .record(z.string(), z.unknown())

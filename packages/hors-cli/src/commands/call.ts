@@ -14,8 +14,8 @@ import { loadKeystore } from "../profile/keystore.js";
 import { readProfile, readServicesCache } from "../profile/store.js";
 import { extractAssuranceChallenge } from "../shared/assurance.js";
 import {
-  completeSelfieChallenge,
-  isSelfieChallenge,
+  completeAssuranceChallenge,
+  isInteractiveAssuranceChallenge,
 } from "../shared/selfie-qr.js";
 import { writeTraceEvent } from "../trace/write.js";
 
@@ -190,16 +190,25 @@ export async function callCommand(
       });
 
       const interactive =
-        Boolean(process.stdout.isTTY) && isSelfieChallenge(challenge);
+        Boolean(process.stdout.isTTY) &&
+        isInteractiveAssuranceChallenge(challenge);
       if (!interactive) {
+        const kind =
+          challenge &&
+          typeof challenge === "object" &&
+          "type" in challenge &&
+          typeof (challenge as { type?: unknown }).type === "string"
+            ? String((challenge as { type: string }).type)
+            : "assurance";
         console.log(chalk.yellow("Step-up required"));
         console.log(
           JSON.stringify(
             {
               challenge,
               requestState: state,
-              instruction:
-                "Re-run this exact `hors call` in your visible terminal to scan the World App QR, or complete externally and pass --proof / --request-state.",
+              instruction: process.stdout.isTTY
+                ? `This ${kind} challenge could not open an interactive QR handoff. Complete externally and pass --proof / --request-state.`
+                : `Re-run this exact \`hors call\` in your visible terminal to scan the World App QR for ${kind}, or complete externally and pass --proof / --request-state.`,
               meta,
             },
             null,
@@ -209,7 +218,7 @@ export async function callCommand(
         return;
       }
 
-      activeProof = await completeSelfieChallenge(challenge);
+      activeProof = await completeAssuranceChallenge(challenge);
       activeState = state;
 
       writeTraceEvent({
