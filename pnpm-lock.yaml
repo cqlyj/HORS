@@ -142,6 +142,9 @@ importers:
       '@worldcoin/agentkit-core':
         specifier: ^0.2.0
         version: 0.2.0(bufferutil@4.1.0)(ethers@6.17.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(typescript@7.0.2)(utf-8-validate@5.0.10)
+      '@worldcoin/idkit-core':
+        specifier: ^4.2.2
+        version: 4.2.2
       chalk:
         specifier: ^5.6.2
         version: 5.6.2
