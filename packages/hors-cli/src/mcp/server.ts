@@ -22,36 +22,10 @@ import {
   readServicesCache,
   upsertService,
 } from "../profile/store.js";
+import { extractAssuranceChallenge } from "../shared/assurance.js";
 import { writeTraceEvent } from "../trace/write.js";
 
 const DEFAULT_REGISTRY = "0x86B773d98d3A7dfE6Cc785CA8F76f7A7Ca85f7b9";
-
-function extractAssuranceChallenge(inputRequests: unknown): unknown {
-  if (!inputRequests || typeof inputRequests !== "object") {
-    return inputRequests;
-  }
-  const assurance = (inputRequests as { assurance?: unknown }).assurance;
-  if (!assurance || typeof assurance !== "object") {
-    return inputRequests;
-  }
-  const rec = assurance as Record<string, unknown>;
-  const message =
-    typeof rec.message === "string"
-      ? rec.message
-      : typeof rec.params === "object" &&
-          rec.params &&
-          typeof (rec.params as { message?: string }).message === "string"
-        ? (rec.params as { message: string }).message
-        : undefined;
-  if (message) {
-    try {
-      return JSON.parse(message);
-    } catch {
-      return message;
-    }
-  }
-  return assurance;
-}
 
 function resolveServiceEndpoint(service: string): {
   endpoint: string;
@@ -156,7 +130,7 @@ export function startMcpBridge(): void {
                   {
                     connected: false,
                     nextStep:
-                      'Run `hors connect --fresh` in your terminal and scan the QR code with World App. Then call hors_status again.',
+                      "Run `hors connect --fresh` in your terminal and scan the QR code with World App. Then call hors_status again.",
                   },
                   null,
                   2,
@@ -198,9 +172,7 @@ export function startMcpBridge(): void {
         inputSchema: z.object({
           ensName: z
             .string()
-            .describe(
-              "ENS name of the service, e.g. openagents.eth",
-            ),
+            .describe("ENS name of the service, e.g. openagents.eth"),
           endpoint: z
             .string()
             .optional()
