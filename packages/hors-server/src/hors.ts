@@ -824,6 +824,10 @@ export function horsImpl(
                 signal: challenge.signal,
                 signalHash: challenge.signalHash,
                 signalParamName: challenge.signalParamName,
+                ...(challenge.appId ? { appId: challenge.appId } : {}),
+                ...(challenge.environment
+                  ? { environment: challenge.environment }
+                  : {}),
                 ...(challenge.attributes
                   ? { attributes: challenge.attributes }
                   : {}),
