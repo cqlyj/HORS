@@ -17,6 +17,7 @@ import {
   type ExecutionReceipt,
   type FunctionPolicy,
   type HORSErrorCode,
+  type HORSDiagnosticMeta,
   type AssuranceProof,
   type HORSAuth,
   type HORSExecutor,
@@ -33,6 +34,7 @@ import type {
   HORSToolHandler,
   ToolHandler,
 } from "./hors-service.js";
+import { attachDiagnosticMeta, buildDiagnosticMeta } from "./diagnostic.js";
 
 const VALID_ORIGINS = new Set<string>(["same-human", "any-human", "public"]);
 const VALID_ASSURANCES = new Set<string>(["none", "selfie", "identity"]);
@@ -195,6 +197,33 @@ function horsToMcpError(
   return new ProtocolError(HORS_RPC_CODES[code], message ?? code, data);
 }
 
+function horsDenyResult(
+  code: HORSErrorCode,
+  message: string | undefined,
+  policy: FunctionPolicy,
+  extras?: {
+    functionName?: string;
+    callerHumanId?: string;
+    policyHash?: string;
+  },
+): CallToolResult {
+  const text = message ?? code;
+  const meta = buildDiagnosticMeta(
+    { status: "deny", code, reason: text },
+    policy,
+    extras,
+  );
+  // MCP tools/call converts thrown ProtocolError → isError without preserving
+  // error.data, so attach diagnostics on the result itself.
+  return attachDiagnosticMeta(
+    {
+      content: [{ type: "text", text }],
+      isError: true,
+    },
+    meta,
+  ) as CallToolResult;
+}
+
 function parseAuditEncryptionKey(hexKey: string): Uint8Array {
   const normalized = hexKey.startsWith("0x") ? hexKey.slice(2) : hexKey;
   if (normalized.length !== 64) {
@@ -216,6 +245,7 @@ function policiesEqual(a: FunctionPolicy, b: FunctionPolicy): boolean {
   if (a.origin !== b.origin) return false;
   if ((a.assurance ?? "none") !== (b.assurance ?? "none")) return false;
   if ((a.executor ?? "local") !== (b.executor ?? "local")) return false;
+  if ((a.agentCallable ?? true) !== (b.agentCallable ?? true)) return false;
   const aAttrs = JSON.stringify(a.identityAttributes ?? []);
   const bAttrs = JSON.stringify(b.identityAttributes ?? []);
   return aAttrs === bAttrs;
@@ -312,7 +342,21 @@ async function finalizeAllowResult(
       `[HORS] Audit root: ${auditRoot} for ${auditParams.functionName}`,
     );
   }
-  return stripReceipt(result);
+  const cleaned = stripReceipt(result);
+  const meta: HORSDiagnosticMeta = buildDiagnosticMeta(
+    { status: "allow", code: null },
+    policy,
+    {
+      functionName: auditParams.functionName,
+      callerHumanId: auditParams.callerHumanId,
+      policyHash: authContext.policyContentHash,
+      teeVerified: trustedMeta?.teeVerified,
+      provider: trustedMeta?.provider,
+    },
+  );
+  return attachDiagnosticMeta(cleaned as Record<string, unknown>, meta) as
+    | CallToolResult
+    | InputRequiredResult;
 }
 
 async function handleStepUpReentry(
@@ -467,13 +511,22 @@ async function handleStepUpReentry(
   }
 
   if (decision.status === "deny") {
-    throw horsToMcpError(decision.code!, decision.reason);
+    return horsDenyResult(decision.code!, decision.reason, policy, {
+      functionName: state.functionName,
+      callerHumanId: state.callerHumanId,
+      policyHash: authContext.policyContentHash,
+    });
   }
 
-  throw horsToMcpError(
+  return horsDenyResult(
     "HORS_ASSURANCE_REQUIRED",
     decision.reason ?? "Assurance verification failed",
-    { requiredAssurance: decision.requiredAssurance },
+    policy,
+    {
+      functionName: state.functionName,
+      callerHumanId: state.callerHumanId,
+      policyHash: authContext.policyContentHash,
+    },
   );
 }
 
@@ -541,6 +594,18 @@ export function horsImpl(
   return async (argsOrCtx, maybeCtx) => {
     const [args, ctx] = normalizeToolArgs(argsOrCtx, maybeCtx);
 
+    if (policy.agentCallable === false) {
+      return horsDenyResult(
+        "HORS_FUNCTION_FORBIDDEN",
+        `Function "${functionName}" is not callable by agents`,
+        policy,
+        {
+          functionName,
+          policyHash: authContext.policyContentHash,
+        },
+      );
+    }
+
     validateExecutorRegistration(policy, authContext.executors);
 
     if (
@@ -558,7 +623,7 @@ export function horsImpl(
       );
       const result = await handler(args, ctx, horsCtx);
       if (policy.executor && policy.executor !== "local") {
-        validateExecutionReceipt(
+        const trustedMeta = validateExecutionReceipt(
           result,
           policy,
           receiptBrand,
@@ -566,18 +631,35 @@ export function horsImpl(
           callId,
           argsHash,
         );
-        return stripReceipt(result);
+        const cleaned = stripReceipt(result);
+        return attachDiagnosticMeta(
+          cleaned as Record<string, unknown>,
+          buildDiagnosticMeta({ status: "allow", code: null }, policy, {
+            functionName,
+            policyHash: authContext.policyContentHash,
+            teeVerified: trustedMeta?.teeVerified,
+            provider: trustedMeta?.provider,
+          }),
+        ) as CallToolResult | InputRequiredResult;
       }
-      return result;
+      return attachDiagnosticMeta(
+        result as Record<string, unknown>,
+        buildDiagnosticMeta({ status: "allow", code: null }, policy, {
+          functionName,
+          policyHash: authContext.policyContentHash,
+        }),
+      ) as CallToolResult | InputRequiredResult;
     }
 
     const horsAuthHeader = ctx.http?.req?.headers.get(
       HORS_HEADERS.REQUEST.toLowerCase(),
     );
     if (!horsAuthHeader) {
-      throw horsToMcpError(
+      return horsDenyResult(
         "HORS_ORIGIN_MISMATCH",
         "Missing Hors-Authorization header",
+        policy,
+        { functionName, policyHash: authContext.policyContentHash },
       );
     }
 
@@ -588,7 +670,10 @@ export function horsImpl(
         reentryAuth = await verifyAuthHeader(authContext, horsAuthHeader);
       } catch (error) {
         if (error instanceof HORSError) {
-          throw horsToMcpError(error.code, error.message, error.data);
+          return horsDenyResult(error.code, error.message, policy, {
+            functionName,
+            policyHash: authContext.policyContentHash,
+          });
         }
         throw error;
       }
@@ -597,12 +682,14 @@ export function horsImpl(
         reentryAuth.callerAddress.toLowerCase() !==
         state.callerAddress.toLowerCase()
       ) {
-        throw horsToMcpError(
+        return horsDenyResult(
           "HORS_ORIGIN_MISMATCH",
           "Step-up caller mismatch",
+          policy,
           {
-            headerAddress: reentryAuth.callerAddress,
-            stateAddress: state.callerAddress,
+            functionName,
+            callerHumanId: reentryAuth.callerHumanId,
+            policyHash: authContext.policyContentHash,
           },
         );
       }
@@ -624,19 +711,24 @@ export function horsImpl(
       horsAuth = await verifyAuthHeader(authContext, horsAuthHeader);
     } catch (error) {
       if (error instanceof HORSError) {
-        throw horsToMcpError(error.code, error.message, error.data);
+        return horsDenyResult(error.code, error.message, policy, {
+          functionName,
+          policyHash: authContext.policyContentHash,
+        });
       }
       throw error;
     }
 
     const signedFunctionName = extractFunctionName(horsAuth.payload.uri);
     if (signedFunctionName !== functionName) {
-      throw horsToMcpError(
+      return horsDenyResult(
         "HORS_FUNCTION_FORBIDDEN",
         "Signed function name does not match tool",
+        policy,
         {
-          signed: signedFunctionName,
-          expected: functionName,
+          functionName,
+          callerHumanId: horsAuth.callerHumanId,
+          policyHash: authContext.policyContentHash,
         },
       );
     }
@@ -644,12 +736,14 @@ export function horsImpl(
     const resources = parseHorsResources(horsAuth.payload.resources);
     const computedArgsHash = hashArguments(args);
     if (computedArgsHash.toLowerCase() !== resources.argsHash.toLowerCase()) {
-      throw horsToMcpError(
+      return horsDenyResult(
         "HORS_FUNCTION_FORBIDDEN",
         "Arguments hash mismatch — signed arguments do not match request",
+        policy,
         {
-          expected: resources.argsHash,
-          computed: computedArgsHash,
+          functionName,
+          callerHumanId: horsAuth.callerHumanId,
+          policyHash: authContext.policyContentHash,
         },
       );
     }
@@ -680,7 +774,11 @@ export function horsImpl(
       }
 
       case "deny":
-        throw horsToMcpError(decision.code!, decision.reason);
+        return horsDenyResult(decision.code!, decision.reason, policy, {
+          functionName,
+          callerHumanId: horsAuth.callerHumanId,
+          policyHash: authContext.policyContentHash,
+        });
 
       case "step-up-required": {
         const adapter =
@@ -689,9 +787,15 @@ export function horsImpl(
             : authContext.selfieAdapter;
 
         if (!adapter) {
-          throw horsToMcpError(
+          return horsDenyResult(
             "HORS_ASSURANCE_REQUIRED",
             `No ${decision.requiredAssurance} adapter configured. Set assurance.rpId and assurance.signingKey in createHORS config.`,
+            policy,
+            {
+              functionName,
+              callerHumanId: horsAuth.callerHumanId,
+              policyHash: authContext.policyContentHash,
+            },
           );
         }
 
@@ -710,7 +814,7 @@ export function horsImpl(
           policy.identityAttributes,
         );
 
-        return inputRequired({
+        const stepUpResult = inputRequired({
           inputRequests: {
             assurance: inputRequired.elicit({
               message: JSON.stringify({
@@ -747,6 +851,15 @@ export function horsImpl(
             ctx,
           ),
         });
+
+        return attachDiagnosticMeta(
+          stepUpResult as Record<string, unknown>,
+          buildDiagnosticMeta(decision, policy, {
+            functionName,
+            callerHumanId: horsAuth.callerHumanId,
+            policyHash: authContext.policyContentHash,
+          }),
+        ) as InputRequiredResult;
       }
     }
   };

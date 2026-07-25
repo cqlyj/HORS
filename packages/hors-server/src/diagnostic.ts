@@ -1,8 +1,10 @@
 import type { ServerContext } from "@modelcontextprotocol/server";
 import {
   HORS_HEADERS,
+  HORS_META_KEY,
   type HORSStatusValue,
   type HORSDenyReason,
+  type HORSDiagnosticMeta,
   type FunctionPolicy,
   type HORSDecision,
   type HORSErrorCode,
@@ -73,6 +75,57 @@ export function buildDiagnosticHeaders(
   }
 
   return headers;
+}
+
+export interface BuildDiagnosticMetaExtras {
+  teeVerified?: boolean;
+  provider?: string;
+  functionName?: string;
+  policyHash?: string;
+  callerHumanId?: string;
+}
+
+export function buildDiagnosticMeta(
+  decision: HORSDecision,
+  policy: FunctionPolicy,
+  extras?: BuildDiagnosticMetaExtras,
+): HORSDiagnosticMeta {
+  const meta: HORSDiagnosticMeta = {
+    status: mapDecisionToStatus(decision),
+    origin: mapOriginToHeader(policy.origin),
+    executionMode: policy.executor ?? "local",
+  };
+
+  const denyReason = mapDecisionToDenyReason(decision.code);
+  if (denyReason) meta.denyReason = denyReason;
+  if (decision.requiredAssurance) {
+    meta.requireAssurance = decision.requiredAssurance;
+  }
+  if (extras?.policyHash) meta.policyHash = extras.policyHash;
+  if (extras?.teeVerified !== undefined) meta.teeVerified = extras.teeVerified;
+  if (extras?.provider) meta.provider = extras.provider;
+  if (extras?.callerHumanId) meta.callerHumanId = extras.callerHumanId;
+  if (extras?.functionName) meta.functionName = extras.functionName;
+
+  return meta;
+}
+
+/** Clone a tool result and embed `_meta.hors` diagnostic metadata. */
+export function attachDiagnosticMeta<T extends Record<string, unknown>>(
+  result: T,
+  meta: HORSDiagnosticMeta,
+): T {
+  const existingMeta =
+    result._meta && typeof result._meta === "object"
+      ? (result._meta as Record<string, unknown>)
+      : {};
+  return {
+    ...result,
+    _meta: {
+      ...existingMeta,
+      [HORS_META_KEY]: meta,
+    },
+  };
 }
 
 /** Best-effort: MCP ServerContext does not expose a response object yet. */

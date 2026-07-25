@@ -26,3 +26,13 @@ export {
 export { initiateEnrollment, verifyEnrollment } from "./enrollment.js";
 export type { EnrollmentChallenge } from "./enrollment.js";
 export type { StorageClient } from "./storage.js";
+export {
+  buildDiagnosticHeaders,
+  buildDiagnosticMeta,
+  attachDiagnosticMeta,
+  applyDiagnosticHeaders,
+} from "./diagnostic.js";
+export type {
+  DiagnosticHeaders,
+  BuildDiagnosticMetaExtras,
+} from "./diagnostic.js";
