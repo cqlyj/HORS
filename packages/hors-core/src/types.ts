@@ -19,6 +19,8 @@ export interface FunctionPolicy {
   assurance?: Assurance;
   executor?: Executor;
   identityAttributes?: IdentityAttribute[];
+  /** Default true; set false to forbid all agent calls. */
+  agentCallable?: boolean;
 }
 
 /** Data uploaded to 0G Storage and hashed for on-chain registration. */

@@ -7,6 +7,14 @@ export function evaluatePolicy(
   ownerHumanId: Hex,
   assuranceProofs?: AssuranceProof[],
 ): HORSDecision {
+  if (policy.agentCallable === false) {
+    return {
+      status: "deny",
+      code: "HORS_FUNCTION_FORBIDDEN",
+      reason: "Function is not callable by agents",
+    };
+  }
+
   // Step 1: Origin check
   if (policy.origin === "same-human") {
     if (callerHumanId.toLowerCase() !== ownerHumanId.toLowerCase()) {
