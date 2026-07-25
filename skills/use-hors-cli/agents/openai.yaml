@@ -1,0 +1,4 @@
+interface:
+  display_name: "Use HORS CLI"
+  short_description: "Operate human-origin protected services"
+  default_prompt: "Use $use-hors-cli to connect my human-backed profile and call a HORS service through the CLI."
