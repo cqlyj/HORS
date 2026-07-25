@@ -107,4 +107,6 @@ Optional:
 
 ## Out of scope
 
-This example intentionally omits ENS discovery, 0G executors, Selfie/Identity step-up, and registry enrollment. See `tmp/` for the fuller integration harness.
+This example intentionally omits ENS discovery, 0G executors, Selfie/Identity
+step-up, and registry publication. Continue with the full [Call Home
+example](../call-home/README.md).
