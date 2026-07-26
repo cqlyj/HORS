@@ -8,10 +8,12 @@ import {
   withInputRequired,
 } from "@modelcontextprotocol/client";
 import {
+  assertHORSServiceBinding,
   createHORSClient,
   discoverHORSService,
   downloadAndVerifyPolicy,
   extractHorsMeta,
+  HORS_REGISTRY_ADDRESS,
   readServicePolicy,
 } from "hors-client";
 import { privateKeyToAccount } from "viem/accounts";
@@ -24,8 +26,6 @@ import {
 } from "../profile/store.js";
 import { extractAssuranceChallenge } from "../shared/assurance.js";
 import { writeTraceEvent } from "../trace/write.js";
-
-const DEFAULT_REGISTRY = "0x86B773d98d3A7dfE6Cc785CA8F76f7A7Ca85f7b9";
 
 function resolveServiceEndpoint(service: string): {
   endpoint: string;
@@ -179,18 +179,6 @@ export function startMcpBridge(): void {
             .describe(
               "Direct MCP endpoint URL — skips ENS resolution (for local dev, e.g. http://127.0.0.1:3200/mcp)",
             ),
-          serviceId: z
-            .string()
-            .optional()
-            .describe(
-              "On-chain HORS service ID (bytes32 hex) — enables policy verification via hors_list_functions",
-            ),
-          registryAddress: z
-            .string()
-            .optional()
-            .describe(
-              "HORSRegistry contract address (default: 0x86B773d98d3A7dfE6Cc785CA8F76f7A7Ca85f7b9)",
-            ),
         }),
       },
       async (args) => {
@@ -199,16 +187,24 @@ export function startMcpBridge(): void {
 
         try {
           const info = directEndpoint
-            ? { endpoint: directEndpoint, context: ensName }
+            ? {
+                endpoint: directEndpoint,
+                context: "manual endpoint override",
+                ensName,
+                serviceId: null,
+                registryAddress: null,
+                registrationVerified: false as const,
+              }
             : await discoverHORSService(ensName);
 
           upsertService(ensName, {
             endpoint: info.endpoint,
             context: info.context,
-            ...(args.serviceId ? { serviceId: String(args.serviceId) } : {}),
-            ...(args.registryAddress
-              ? { registryAddress: String(args.registryAddress) }
+            ...(info.serviceId ? { serviceId: info.serviceId } : {}),
+            ...(info.registryAddress
+              ? { registryAddress: info.registryAddress }
               : {}),
+            registrationVerified: info.registrationVerified,
           });
           return {
             content: [
@@ -310,7 +306,7 @@ export function startMcpBridge(): void {
                     service,
                     endpoint: entry.endpoint,
                     functions: cached,
-                    hint: "No serviceId configured. Run `hors services <ens> --service-id <hex>` to enable on-chain policy lookup.",
+                    hint: "Direct endpoint entries do not have an ENS-verified HORS registration. Discover the service by ENS to enable on-chain policy lookup.",
                   },
                   null,
                   2,
@@ -321,19 +317,34 @@ export function startMcpBridge(): void {
         }
 
         try {
-          const registry = (entry.registryAddress ??
-            DEFAULT_REGISTRY) as `0x${string}`;
           const { service: svcRecord } = await readServicePolicy(
             entry.serviceId as `0x${string}`,
-            registry,
+            HORS_REGISTRY_ADDRESS,
+          );
+          assertHORSServiceBinding(
+            entry.serviceId as `0x${string}`,
+            service,
+            svcRecord.owner,
           );
 
           const { manifest } = await downloadAndVerifyPolicy(
             svcRecord.policyStorageRoot,
             svcRecord.policyContentHash,
           );
+          if (
+            manifest.serviceId.toLowerCase() !== entry.serviceId.toLowerCase()
+          ) {
+            throw new Error(
+              `Policy manifest serviceId ${manifest.serviceId} does not match discovered serviceId ${entry.serviceId}`,
+            );
+          }
 
-          upsertService(service, { ...entry, functions: manifest.functions });
+          upsertService(service, {
+            ...entry,
+            registryAddress: HORS_REGISTRY_ADDRESS,
+            registrationVerified: true,
+            functions: manifest.functions,
+          });
 
           return {
             content: [

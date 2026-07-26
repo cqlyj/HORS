@@ -23,6 +23,7 @@ export interface ServiceCacheEntry {
   context?: string | null;
   serviceId?: string;
   registryAddress?: string;
+  registrationVerified?: boolean;
   functions?: Record<string, FunctionPolicy>;
 }
 

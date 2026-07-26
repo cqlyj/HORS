@@ -9,18 +9,16 @@ import {
 export async function servicesCommand(
   ensName?: string,
   endpoint?: string,
-  serviceId?: string,
-  registryAddress?: string,
 ): Promise<void> {
   if (ensName) {
     if (endpoint) {
       upsertService(ensName, {
         endpoint,
         context: "manual endpoint override",
-        ...(serviceId ? { serviceId } : {}),
-        ...(registryAddress ? { registryAddress } : {}),
+        registrationVerified: false,
       });
       console.log(chalk.green(`Cached ${ensName} → ${endpoint}`));
+      console.log(chalk.yellow("  registration unverified (direct endpoint)"));
       return;
     }
     console.log(chalk.dim(`Discovering ${ensName}…`));
@@ -28,12 +26,16 @@ export async function servicesCommand(
     upsertService(ensName, {
       endpoint: info.endpoint,
       context: info.context,
-      ...(serviceId ? { serviceId } : {}),
-      ...(registryAddress ? { registryAddress } : {}),
+      serviceId: info.serviceId,
+      registryAddress: info.registryAddress,
+      registrationVerified: info.registrationVerified,
     });
     console.log(chalk.green(`Cached ${ensName}`));
     console.log(`  endpoint  ${info.endpoint}`);
     if (info.context) console.log(`  context   ${info.context}`);
+    console.log(`  serviceId ${info.serviceId}`);
+    console.log(`  registry  ${info.registryAddress}`);
+    console.log(chalk.green("  binding   verified"));
     return;
   }
 
@@ -62,6 +64,12 @@ export async function servicesCommand(
     console.log(`    endpoint  ${svc.endpoint}`);
     if (svc.context) console.log(`    context   ${svc.context}`);
     if (svc.serviceId) console.log(`    serviceId ${svc.serviceId}`);
+    if (svc.registryAddress) console.log(`    registry  ${svc.registryAddress}`);
+    if (svc.registrationVerified !== undefined) {
+      console.log(
+        `    binding   ${svc.registrationVerified ? "verified" : "unverified"}`,
+      );
+    }
     const fns = Object.keys(svc.functions ?? {});
     if (fns.length > 0) {
       console.log(`    functions ${fns.join(", ")}`);

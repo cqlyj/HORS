@@ -1,13 +1,16 @@
 import chalk from "chalk";
-import { readServicePolicy, downloadAndVerifyPolicy } from "hors-client";
+import {
+  assertHORSServiceBinding,
+  downloadAndVerifyPolicy,
+  HORS_REGISTRY_ADDRESS,
+  readServicePolicy,
+} from "hors-client";
 import type { FunctionPolicy } from "hors-core";
 import {
   readProfile,
   readServicesCache,
   upsertService,
 } from "../profile/store.js";
-
-const DEFAULT_REGISTRY = "0x86B773d98d3A7dfE6Cc785CA8F76f7A7Ca85f7b9";
 
 function printFunctions(
   service: string,
@@ -75,26 +78,39 @@ export async function listFunctionsCommand(
     printFunctions(service, cached);
     console.log(
       chalk.yellow(
-        "No serviceId configured. Run `hors services <ens> --service-id <hex>` to enable on-chain policy lookup.",
+        "Direct endpoint entries do not have an ENS-verified HORS registration. Discover the service by ENS to enable on-chain policy lookup.",
       ),
     );
     return;
   }
 
   try {
-    const registry = (entry.registryAddress ??
-      DEFAULT_REGISTRY) as `0x${string}`;
     const { service: svcRecord } = await readServicePolicy(
       entry.serviceId as `0x${string}`,
-      registry,
+      HORS_REGISTRY_ADDRESS,
+    );
+    assertHORSServiceBinding(
+      entry.serviceId as `0x${string}`,
+      service,
+      svcRecord.owner,
     );
 
     const { manifest } = await downloadAndVerifyPolicy(
       svcRecord.policyStorageRoot,
       svcRecord.policyContentHash,
     );
+    if (manifest.serviceId.toLowerCase() !== entry.serviceId.toLowerCase()) {
+      throw new Error(
+        `Policy manifest serviceId ${manifest.serviceId} does not match discovered serviceId ${entry.serviceId}`,
+      );
+    }
 
-    upsertService(service, { ...entry, functions: manifest.functions });
+    upsertService(service, {
+      ...entry,
+      registryAddress: HORS_REGISTRY_ADDRESS,
+      registrationVerified: true,
+      functions: manifest.functions,
+    });
 
     printFunctions(service, manifest.functions, {
       verified: true,

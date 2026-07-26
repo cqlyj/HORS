@@ -60,9 +60,9 @@ For a user-provided local demo endpoint:
 hors services <service-name> --endpoint <mcp-url>
 ```
 
-Add `--service-id <bytes32>` and `--registry <address>` only when the user or
-trusted project configuration provides those values. Do not invent identifiers,
-addresses, endpoints, or ENS names.
+Direct endpoints are intentionally unverified and do not support on-chain
+policy inspection. Do not invent identifiers, addresses, endpoints, or ENS
+names.
 
 ### 4. Inspect policy before calling
 
@@ -140,9 +140,8 @@ call.
 ### 7. Present the demo result
 
 For the Call Home vault demo, use this sequence after the service name is known.
-If `hors list-functions` reports no serviceId, cache it first from the example
-`.env` (`HORS_SERVICE_ID` / `HORS_REGISTRY_ADDRESS`) via
-`hors services <service> --service-id <hex> --registry <hex>`, then refresh:
+ENS discovery supplies the service ID and verifies its canonical registry
+binding before caching:
 
 ```bash
 hors status

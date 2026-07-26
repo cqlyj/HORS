@@ -132,14 +132,16 @@ does not implement or claim a browser-style preflight protocol.
 sequenceDiagram
     participant A as Agent / HORS CLI
     participant E as ENS
+    participant R as HORSRegistry
     participant S as HORS MCP service
     participant W as World AgentBook
     participant I as World assurance
     participant Z as 0G Compute
     participant H as Private handler
 
-    A->>E: resolve agent-endpoint[mcp], agent-context
-    E-->>A: live endpoint and context
+    A->>E: resolve endpoint, context, hors.service-id
+    E-->>A: live endpoint, context, service ID
+    A->>R: verify service ID and ENS-name binding
     A->>S: signed MCP tools/call
     S->>S: verify domain, freshness, nonce, function, args, policy, callId
     S->>W: lookupHuman(agent address)
@@ -220,18 +222,20 @@ the agent.
 
 ### ENS: owner-controlled service mobility
 
-The HORS client currently resolves exactly two records:
+The HORS client resolves three records:
 
-- `agent-endpoint[mcp]`
-- `agent-context`
+- `agent-endpoint[mcp]` (ENSIP-26)
+- `agent-context` (ENSIP-26)
+- `hors.service-id` (HORS registration discovery)
 
 This makes discovery functional rather than cosmetic. A service owner can
 change the endpoint record, and newly resolving agents follow it without an
 application release or vendor-managed directory update.
 
-The service ID and HORSRegistry address are supplied separately to the current
-CLI cache. HORS does not claim a complete ENS service graph or ENSIP-25
-registration backlink in this implementation.
+The service ID is mandatory. The client validates its bytes32 encoding, reads
+the corresponding record from the canonical HORSRegistry, and recomputes the
+ID from the registry owner and normalized ENS name. A missing or mismatched
+record fails discovery before the endpoint is cached.
 
 ### 0G: public policy evidence and verified execution
 

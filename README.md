@@ -164,8 +164,9 @@ The live `home.borrow` path is:
 
 1. `hors connect --fresh` creates a connector wallet and launches AgentKit
   registration in the human's terminal.
-2. `hors services openagents.eth` resolves `agent-endpoint[mcp]` and
-  `agent-context` from ENS.
+2. `hors services openagents.eth` resolves `agent-endpoint[mcp]`,
+  `agent-context`, and `hors.service-id` from ENS, then verifies the service ID
+  against HORSRegistry.
 3. `hors list-functions ... --refresh` reads HORSRegistry, downloads the policy
   manifest from 0G Storage with proof, and verifies its content hash.
 4. `hors call ... home.borrow` signs the exact MCP tool call.
@@ -187,7 +188,7 @@ no name, date of birth, nationality, document number, or raw document image.
 ```mermaid
 flowchart LR
     Agent["Independent agent wallet<br/>HORS CLI / hors-client"]
-    ENS["ENS on Sepolia<br/>agent-endpoint[mcp]<br/>agent-context"]
+    ENS["ENS on Sepolia<br/>agent-endpoint[mcp]<br/>agent-context<br/>hors.service-id"]
     MCP["Private MCP service<br/>service.hors()"]
     Book["World AgentBook<br/>lookupHuman(agent)"]
     World["World assurance<br/>Selfie / Identity"]
@@ -239,9 +240,11 @@ necessary; sensitive functions can still require the human to be present.
 ### ENS — where is the service?
 
 HORS resolves the [ENSIP-26](https://docs.ens.domains/ensip/26/) text records
-`agent-endpoint[mcp]` and `agent-context`. The owner can move a service without
-reconfiguring every sibling agent, and the CLI discovers the live record rather
-than using a hard-coded endpoint.
+`agent-endpoint[mcp]` and `agent-context`, plus the HORS-specific
+`hors.service-id` record. The owner can move a service without reconfiguring
+every sibling agent. The CLI validates the service ID against the canonical
+HORSRegistry and the registry owner's normalized ENS name before caching the
+endpoint.
 
 ### 0G — what was published, and how was it executed?
 

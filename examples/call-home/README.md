@@ -61,7 +61,8 @@ make setup
 ```bash
 make expose                    # Terminal B — get a public URL
 make set-ens ENDPOINT=https://xxx.ngrok-free.app/mcp
-# → Sets ENSIP-26 text records on Sepolia
+# → Sets ENSIP-26 endpoint/context plus the HORS service ID on Sepolia
+# → Resolves the records back and verifies the registry binding
 ```
 
 ## Demo script
@@ -102,13 +103,11 @@ Scan the QR with World App. Output ends with:
 
 ### Step 2 — Agent calls home
 
-Cache the service with the registry `serviceId` from `.env` (ENS alone does not
-carry it yet):
+Discover the service. ENS supplies the endpoint and HORS service ID; the client
+verifies that ID against the canonical registry before caching anything:
 
 ```bash
-hors services openagents.eth \
-  --service-id "$(grep ^HORS_SERVICE_ID= .env | cut -d= -f2)" \
-  --registry "$(grep ^HORS_REGISTRY_ADDRESS= .env | cut -d= -f2)"
+hors services openagents.eth
 ```
 
 After scanning, tell your AI agent:
@@ -163,8 +162,7 @@ hors connect --fresh
 # (scan QR)
 
 hors services openagents.eth \
-  --endpoint http://127.0.0.1:3200/mcp \
-  --service-id <from make setup>
+  --endpoint http://127.0.0.1:3200/mcp
 
 hors call openagents.eth home.balance '{}'
 hors call openagents.eth home.borrow '{"recipientAddress":"0xYourAddress"}'
@@ -177,7 +175,6 @@ hors call openagents.eth home.borrow '{"recipientAddress":"0xYourAddress"}'
 | `OWNER_HUMAN_ID`             | Server                       | Owner's AgentBook `humanId` (same human as the connector that will call)        |
 | `HORS_DOMAIN`                | Server                       | Domain in `Hors-Authorization` headers clients sign (default: `openagents.eth`) |
 | `PORT`                       | Server                       | HTTP listen port (default: `3200`)                                              |
-| `HORS_STATE_KEY`             | Server                       | HMAC key for step-up `requestState` (>=32 bytes)                                |
 | `OWNER_PRIVATE_KEY`          | Server, `make setup`         | Owner wallet — registers service and sends borrowed tokens                      |
 | `OG_ROUTER_API_KEY`          | Server                       | 0G Router API key for verified TEE inference                                    |
 | `OG_MODEL`                   | Server                       | 0G model name (default: `qwen2.5-omni`)                                         |
@@ -186,8 +183,7 @@ hors call openagents.eth home.borrow '{"recipientAddress":"0xYourAddress"}'
 | `WORLD_APP_ID`               | Server                       | World App ID for assurance flows                                                |
 | `ENS_NAME`                   | `make setup`, `make set-ens` | ENS name used for service ID derivation and text records                        |
 | `STORAGE_SIGNER_PRIVATE_KEY` | `make setup`                 | 0G Storage signer key (needs testnet funds)                                     |
-| `HORS_REGISTRY_ADDRESS`      | `make setup`                 | HORSRegistry contract (default: `0x86B773d98d3A7dfE6Cc785CA8F76f7A7Ca85f7b9`)   |
-| `HORS_SERVICE_ID`            | `make setup`, CLI            | Auto-written to `.env`; pass it when caching the service for registry reads     |
+| `HORS_SERVICE_ID`            | `make setup`, `make set-ens` | Auto-written to `.env` and published as the `hors.service-id` ENS text record   |
 | `ENDPOINT`                   | `make set-ens`               | Public MCP URL (pass as arg: `make set-ens ENDPOINT=...`)                       |
 
 ## Evidence mode versus local mode

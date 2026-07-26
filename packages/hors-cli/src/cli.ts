@@ -47,19 +47,8 @@ program
     "--endpoint <url>",
     "Manual MCP endpoint (skip ENS lookup; for local demos)",
   )
-  .option("--service-id <hex>", "On-chain HORS service ID (bytes32 hex)")
-  .option(
-    "--registry <address>",
-    "HORSRegistry contract address",
-    "0x86B773d98d3A7dfE6Cc785CA8F76f7A7Ca85f7b9",
-  )
   .action(async (ensName: string | undefined, opts) => {
-    await servicesCommand(
-      ensName,
-      opts.endpoint,
-      opts.serviceId,
-      opts.registry,
-    );
+    await servicesCommand(ensName, opts.endpoint);
   });
 
 program

@@ -279,21 +279,24 @@ const service = await discoverHORSService("openagents.eth", optionalSepoliaRpc);
 // {
 //   endpoint: "https://…/mcp",
 //   context: "Call Home vault — …",
-//   ensName: "openagents.eth"
+//   ensName: "openagents.eth",
+//   serviceId: "0x…",
+//   registryAddress: "0x86B7…f7b9",
+//   registrationVerified: true
 // }
 ```
 
 The resolver reads live Sepolia text records:
 
-- `agent-endpoint[mcp]`
-- `agent-context`
+- `agent-endpoint[mcp]` (ENSIP-26)
+- `agent-context` (ENSIP-26)
+- `hors.service-id` (HORS service registration discovery)
 
-No endpoint fallback is invented. Discovery throws if
-`agent-endpoint[mcp]` is absent.
-
-The current record set does not contain the 0G `serviceId` or HORSRegistry
-address; those values are supplied to the CLI cache or calling application
-separately.
+No endpoint or service identity fallback is invented. Discovery throws if
+`agent-endpoint[mcp]` or `hors.service-id` is absent or malformed. The client
+reads the service owner from the canonical HORSRegistry on 0G Galileo and
+requires the published ID to equal
+`keccak256(owner, keccak256(normalizedEnsName))` before returning it.
 
 ## HORSRegistry and Storage
 
@@ -436,7 +439,7 @@ provider response and compare signed output with the returned content.
 ```text
 hors connect [--fresh] [--profile <name>]
 hors status
-hors services [ens-name] [--endpoint <url>] [--service-id <hex>] [--registry <address>]
+hors services [ens-name] [--endpoint <url>]
 hors list-functions <service> [--refresh]
 hors call <service> <function> '<json>'
 hors watch
@@ -448,9 +451,7 @@ Typical sequence:
 
 ```bash
 hors connect --fresh
-hors services openagents.eth \
-  --service-id 0x... \
-  --registry 0x86B773d98d3A7dfE6Cc785CA8F76f7A7Ca85f7b9
+hors services openagents.eth
 hors list-functions openagents.eth --refresh
 hors call openagents.eth home.balance '{}'
 hors call openagents.eth home.borrow \

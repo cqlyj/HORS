@@ -8,6 +8,11 @@ import {
 import { sepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { namehash, normalize } from "viem/ens";
+import {
+  discoverHORSService,
+  HORS_SERVICE_ID_TEXT_KEY,
+  parseHORSServiceId,
+} from "hors-client";
 
 /** ENS Registry on Sepolia / mainnet */
 const ENS_REGISTRY = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e" as const;
@@ -50,10 +55,13 @@ async function main() {
   const ownerKey = process.env.OWNER_PRIVATE_KEY as `0x${string}` | undefined;
   const ensName = process.env.ENS_NAME;
   const endpoint = process.env.ENDPOINT ?? process.argv[2];
+  const serviceIdValue = process.env.HORS_SERVICE_ID;
   const rpcUrl = process.env.SEPOLIA_RPC_URL ?? DEFAULT_SEPOLIA_RPC;
 
-  if (!ownerKey || !ensName) {
-    throw new Error("Missing OWNER_PRIVATE_KEY or ENS_NAME");
+  if (!ownerKey || !ensName || !serviceIdValue) {
+    throw new Error(
+      "Missing OWNER_PRIVATE_KEY, ENS_NAME, or HORS_SERVICE_ID. Run `make setup` before `make set-ens`.",
+    );
   }
   if (!endpoint) {
     throw new Error(
@@ -63,6 +71,7 @@ async function main() {
 
   const account = privateKeyToAccount(ownerKey);
   const normalizedName = normalize(ensName);
+  const serviceId = parseHORSServiceId(serviceIdValue);
   const node = namehash(normalizedName);
   const transport = http(rpcUrl);
 
@@ -99,6 +108,7 @@ async function main() {
   const records: Array<{ key: string; value: string }> = [
     { key: "agent-endpoint[mcp]", value: endpoint },
     { key: "agent-context", value: AGENT_CONTEXT },
+    { key: HORS_SERVICE_ID_TEXT_KEY, value: serviceId },
   ];
 
   for (const [i, { key, value }] of records.entries()) {
@@ -123,7 +133,11 @@ async function main() {
     console.log(`${key} tx:`, hash);
   }
 
-  console.log("\nDone. ENSIP-26 records set on Sepolia.");
+  const discovered = await discoverHORSService(normalizedName, rpcUrl);
+  console.log("\nDone. ENS service records set and verified on Sepolia.");
+  console.log("Service ID:", discovered.serviceId);
+  console.log("Registry:", discovered.registryAddress);
+  console.log("Binding verified:", discovered.registrationVerified);
 }
 
 main().catch((error) => {

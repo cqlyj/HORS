@@ -4,11 +4,11 @@ import {
   createWalletClient,
   http,
   keccak256,
-  encodePacked,
   toBytes,
   toHex,
   type Hex,
 } from "viem";
+import { normalize } from "viem/ens";
 import { privateKeyToAccount } from "viem/accounts";
 import {
   HORSRegistryABI,
@@ -16,19 +16,17 @@ import {
   type HORSManifestBody,
 } from "hors-core";
 import { createStorageClient, uploadPolicyManifest } from "hors-server";
-import { zeroGGalileo, readServicePolicy } from "hors-client";
+import {
+  deriveHORSServiceId,
+  HORS_REGISTRY_ADDRESS,
+  zeroGGalileo,
+  readServicePolicy,
+} from "hors-client";
 
-const REGISTRY_ADDRESS =
-  (process.env.HORS_REGISTRY_ADDRESS as Hex | undefined) ??
-  "0x86B773d98d3A7dfE6Cc785CA8F76f7A7Ca85f7b9";
+const REGISTRY_ADDRESS = HORS_REGISTRY_ADDRESS;
 
 function functionHash(name: string): Hex {
   return keccak256(toBytes(name));
-}
-
-function deriveServiceId(owner: Hex, ensName: string): Hex {
-  const ensHash = keccak256(toBytes(ensName));
-  return keccak256(encodePacked(["address", "bytes32"], [owner, ensHash]));
 }
 
 function policyToEntry(
@@ -58,16 +56,17 @@ async function main() {
   const storageKey = process.env.STORAGE_SIGNER_PRIVATE_KEY as
     | `0x${string}`
     | undefined;
-  const ensName = process.env.ENS_NAME;
+  const ensNameValue = process.env.ENS_NAME;
 
-  if (!ownerHumanId || !ownerKey || !storageKey || !ensName) {
+  if (!ownerHumanId || !ownerKey || !storageKey || !ensNameValue) {
     throw new Error(
       "Missing OWNER_HUMAN_ID, OWNER_PRIVATE_KEY, STORAGE_SIGNER_PRIVATE_KEY, or ENS_NAME",
     );
   }
 
   const ownerAccount = privateKeyToAccount(ownerKey);
-  const serviceId = deriveServiceId(ownerAccount.address, ensName);
+  const ensName = normalize(ensNameValue);
+  const serviceId = deriveHORSServiceId(ownerAccount.address, ensName);
   const humanOrigin = ownerHumanId;
 
   let existingPolicyVersion = 0;
