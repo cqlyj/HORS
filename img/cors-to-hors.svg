@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390" role="img" aria-labelledby="title desc">
+  <title id="title">CORS and HORS compared</title>
+  <desc id="desc">CORS applies an origin policy between a website origin and a web API. HORS applies an origin policy between the anonymous human behind an agent wallet and a private MCP function.</desc>
+
+  <defs>
+    <linearGradient id="horsBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#083d91"/>
+      <stop offset="1" stop-color="#0b55d9"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-20%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="7" flood-color="#0a3578" flood-opacity=".10"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0L10 5L0 10Z" fill="#275795"/>
+    </marker>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="388" rx="28" fill="#fcf9f3" stroke="#dfe5ed" stroke-width="2"/>
+
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    <rect x="38" y="78" width="92" height="40" rx="20" fill="#e6edf7"/>
+    <text x="84" y="104" text-anchor="middle" font-size="17" font-weight="750" fill="#24456f">CORS</text>
+
+    <rect x="157" y="49" width="258" height="98" rx="19" fill="#fff" stroke="#cbd6e3" stroke-width="2"/>
+    <text x="286" y="90" text-anchor="middle" font-size="22" font-weight="700" fill="#152c4a">Website origin</text>
+    <text x="286" y="119" text-anchor="middle" font-size="16" fill="#63758b">https://app.example</text>
+
+    <path d="M432 98H492" fill="none" stroke="#6d84a2" stroke-width="3" marker-end="url(#arrowBlue)"/>
+
+    <rect x="514" y="49" width="258" height="98" rx="19" fill="#edf4ff" stroke="#8fb1e2" stroke-width="2" filter="url(#shadow)"/>
+    <text x="643" y="90" text-anchor="middle" font-size="22" font-weight="750" fill="#0a418f">CORS policy</text>
+    <text x="643" y="119" text-anchor="middle" font-size="16" fill="#486789">Is this origin allowed?</text>
+
+    <path d="M789 98H849" fill="none" stroke="#6d84a2" stroke-width="3" marker-end="url(#arrowBlue)"/>
+
+    <rect x="871" y="49" width="285" height="98" rx="19" fill="#fff" stroke="#cbd6e3" stroke-width="2"/>
+    <text x="1013.5" y="90" text-anchor="middle" font-size="22" font-weight="700" fill="#152c4a">Web API</text>
+    <text x="1013.5" y="119" text-anchor="middle" font-size="16" fill="#63758b">protected route</text>
+
+    <path d="M38 194H1162" fill="none" stroke="#e0e5ec" stroke-width="2"/>
+
+    <rect x="38" y="270" width="92" height="40" rx="20" fill="#0b4fc7"/>
+    <text x="84" y="296" text-anchor="middle" font-size="17" font-weight="750" fill="#fff">HORS</text>
+
+    <rect x="157" y="241" width="258" height="98" rx="19" fill="#fff" stroke="#72c9ae" stroke-width="2"/>
+    <text x="286" y="282" text-anchor="middle" font-size="21" font-weight="700" fill="#152c4a">Human origin</text>
+    <text x="286" y="311" text-anchor="middle" font-size="16" fill="#63758b">behind an agent wallet</text>
+
+    <path d="M432 290H492" fill="none" stroke="#0b4fc7" stroke-width="3" marker-end="url(#arrowBlue)"/>
+
+    <rect x="514" y="241" width="258" height="98" rx="19" fill="url(#horsBlue)" stroke="#063b94" stroke-width="2" filter="url(#shadow)"/>
+    <text x="643" y="282" text-anchor="middle" font-size="22" font-weight="750" fill="#fff">HORS policy</text>
+    <text x="643" y="311" text-anchor="middle" font-size="16" fill="#e8f1ff">May it call this function?</text>
+
+    <path d="M789 290H849" fill="none" stroke="#0b4fc7" stroke-width="3" marker-end="url(#arrowBlue)"/>
+
+    <rect x="871" y="241" width="285" height="98" rx="19" fill="#fff" stroke="#f06a56" stroke-width="2"/>
+    <text x="1013.5" y="282" text-anchor="middle" font-size="21" font-weight="700" fill="#152c4a">Private MCP function</text>
+    <text x="1013.5" y="311" text-anchor="middle" font-size="16" fill="#63758b">protected handler</text>
+  </g>
+</svg>
