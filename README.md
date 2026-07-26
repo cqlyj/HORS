@@ -6,7 +6,7 @@
 protected function an origin policy.** CORS evaluates the website origin behind
 a request. HORS evaluates the anonymous human origin behind an agent wallet.
 
-CORS applies policy to website origins; HORS applies policy to human origins behind agent wallets
+![CORS applies policy to website origins; HORS applies policy to human origins behind agent wallets](img/cors-to-hors.svg)
 
 The agent keeps its own wallet, model, vendor, and runtime. AgentKit resolves
 that wallet to an anonymous `humanId`; HORS evaluates the resulting human origin
