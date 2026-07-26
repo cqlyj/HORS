@@ -79,6 +79,23 @@ policy. `hors list-functions` currently displays policy but not the MCP input
 schema. Resolve the schema from trusted service documentation or source before
 calling. If no schema is available, ask the user instead of inventing fields.
 
+For the canonical Call Home service at `openagents.eth`, use this bundled,
+trusted schema without searching the repository:
+
+- `home.balance`: `{}`
+- `home.borrow`: `{"recipientAddress":"0x...","amount":"0.01"}` where
+  `recipientAddress` is required and `amount` is an optional decimal 0G string.
+  Omitting `amount` uses the service's configured maximum, currently `0.01`.
+- `home.emergency`:
+  `{"recipientAddress":"0x...","amount":"0.1","reason":"..."}` where
+  `recipientAddress` and `reason` are required and `amount` is optional.
+- `home.exportCredentials`: `{}`
+
+When the user specifies an amount, include it explicitly instead of relying on
+the default. Recheck trusted documentation or source only if refreshed service
+metadata indicates a different service binding or a call reports an argument
+schema/hash mismatch.
+
 The current direct CLI can verify and display a cached service manifest, but
 `hors call` does not yet attach the cached on-chain policy hash to its signed
 request. If a service rejects the zero/default policy hash, report the mismatch;
@@ -159,7 +176,7 @@ identity), after confirming the policy, give the command to the user; do not
 run it as the agent (the human must complete the QR step-up in a visible TTY):
 
 ```bash
-hors call openagents.eth home.borrow '{"recipientAddress":"0xYourFreshWallet"}'
+hors call openagents.eth home.borrow '{"recipientAddress":"0xYourFreshWallet","amount":"0.01"}'
 # or
 hors call openagents.eth home.emergency '{"recipientAddress":"0xYourFreshWallet","amount":"0.1","reason":"..."}'
 ```

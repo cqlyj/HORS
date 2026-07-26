@@ -18,7 +18,8 @@ setup:
 	pnpm tsx enroll.ts
 
 set-ens:
-	pnpm tsx set-ens.ts $(ENDPOINT)
+	@test -n "$(ENDPOINT)" || (echo "ENDPOINT is required, e.g. make set-ens ENDPOINT=https://xxx.ngrok-free.app/mcp" && exit 1)
+	pnpm tsx set-ens.ts "$(ENDPOINT)"
 
 server:
 	pnpm tsx server.ts

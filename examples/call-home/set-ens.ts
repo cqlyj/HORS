@@ -51,21 +51,45 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Prefer explicit CLI arg over env so `make set-ens ENDPOINT=...` wins cleanly. */
+function resolveEndpoint(): string {
+  const raw = process.argv[2] ?? process.env.ENDPOINT;
+  if (!raw) {
+    throw new Error(
+      "Missing ENDPOINT (set env ENDPOINT or pass as CLI arg, e.g. https://xxx.ngrok-free.app/mcp)",
+    );
+  }
+
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error(
+      `Invalid ENDPOINT URL: ${raw}\n` +
+        `Expected a full http(s) URL, e.g. https://xxx.ngrok-free.app/mcp`,
+    );
+  }
+
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error(
+      `Invalid ENDPOINT scheme "${url.protocol}//" in ${raw}\n` +
+        `Use https:// (not hthttps:// or another scheme).`,
+    );
+  }
+
+  return raw;
+}
+
 async function main() {
   const ownerKey = process.env.OWNER_PRIVATE_KEY as `0x${string}` | undefined;
   const ensName = process.env.ENS_NAME;
-  const endpoint = process.env.ENDPOINT ?? process.argv[2];
+  const endpoint = resolveEndpoint();
   const serviceIdValue = process.env.HORS_SERVICE_ID;
   const rpcUrl = process.env.SEPOLIA_RPC_URL ?? DEFAULT_SEPOLIA_RPC;
 
   if (!ownerKey || !ensName || !serviceIdValue) {
     throw new Error(
       "Missing OWNER_PRIVATE_KEY, ENS_NAME, or HORS_SERVICE_ID. Run `make setup` before `make set-ens`.",
-    );
-  }
-  if (!endpoint) {
-    throw new Error(
-      "Missing ENDPOINT (set env ENDPOINT or pass as CLI arg, e.g. https://xxx.ngrok.io/mcp)",
     );
   }
 
