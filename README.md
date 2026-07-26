@@ -25,6 +25,25 @@ backed by the same anonymous human as the service owner.
 [Technical specification](draft/SPEC.md) ·
 [HORSRegistry](https://chainscan-galileo.0g.ai/address/0x86B773d98d3A7dfE6Cc785CA8F76f7A7Ca85f7b9)
 
+## The missing boundary
+
+[A2A](https://a2a-protocol.org/latest/specification/) standardizes agent
+communication. [MCP](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
+standardizes tool invocation and protected-resource OAuth. OAuth and smart
+accounts provide strong control inside a shared identity or wallet authority.
+Full isolation keeps private state separate by giving up cooperation.
+
+Each covers part of the private-agent boundary:
+
+![Current approaches cover part of the independent, private, and composable agent boundary; HORS completes it through World, ENS, and 0G](img/hors-trust-boundary.svg)
+
+HORS combines all three properties for independently walleted agents.
+[ENSIP-26](https://docs.ens.domains/ensip/26/) locates the current service;
+[World AgentKit](https://docs.world.org/agents/agent-kit/integrate) resolves the
+agent wallet to its anonymous human origin; HORS evaluates the per-function
+policy; and [0G](https://docs.0g.ai/developer-hub/building-on-0g/compute-network/router/privacy)
+publishes the policy and verifies protected execution.
+
 ## One request, one decision
 
 Your Work Agent remains inside the company environment, where it already has
@@ -81,17 +100,10 @@ Here, origin and Selfie verification complete before the handler runs. The
 handler's result leaves the service only with a valid, invocation-bound 0G
 execution receipt.
 
-## Why we built it
+## Private functions, not shared databases
 
-Personal-agent systems commonly use one of two architectures.
-
-| Architecture | What works | What breaks |
-| --- | --- | --- |
-| **One super-agent** | It can combine email, finance, calendars, wallets, credentials, and memory. | Prompt injection or one provider compromise creates a system-wide blast radius. |
-| **Fully isolated agents** | Each agent exposes less data and limits the blast radius. | The agents cannot cooperate: a fresh travel agent cannot use the calendar or company policies held by the Work Agent. |
-
-HORS implements a third model: **function-level composability over private
-state**. The fresh agent never receives this:
+HORS implements **function-level composability over private state**. The fresh
+agent never receives this:
 
 ```json
 {
