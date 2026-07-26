@@ -17,6 +17,46 @@ importers:
 
   contracts: {}
 
+  examples/call-home:
+    dependencies:
+      '@modelcontextprotocol/node':
+        specifier: ^2.0.0-beta.5
+        version: 2.0.0-beta.5(@modelcontextprotocol/server@2.0.0-beta.5)(hono@4.12.31)
+      '@modelcontextprotocol/server':
+        specifier: ^2.0.0-beta.5
+        version: 2.0.0-beta.5
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.6.1
+      hors-client:
+        specifier: workspace:*
+        version: link:../../packages/hors-client
+      hors-core:
+        specifier: workspace:*
+        version: link:../../packages/hors-core
+      hors-executor-0g:
+        specifier: workspace:*
+        version: link:../../packages/hors-executor-0g
+      hors-server:
+        specifier: workspace:*
+        version: link:../../packages/hors-server
+      viem:
+        specifier: ^2.55.8
+        version: 2.55.8(bufferutil@4.1.0)(typescript@7.0.2)(utf-8-validate@5.0.10)(zod@4.4.3)
+      zod:
+        specifier: ^4.2.0
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+      tsx:
+        specifier: ^4.19.4
+        version: 4.23.1
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
   examples/hello-hors:
     dependencies:
       '@modelcontextprotocol/client':
@@ -56,55 +96,6 @@ importers:
       '@worldcoin/agentkit-core':
         specifier: ^0.2.0
         version: 0.2.0(bufferutil@4.1.0)(ethers@6.17.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(typescript@7.0.2)(utf-8-validate@5.0.10)
-      tsx:
-        specifier: ^4.19.4
-        version: 4.23.1
-      typescript:
-        specifier: ^7.0.2
-        version: 7.0.2
-
-  examples/private-project-service:
-    dependencies:
-      '@0gfoundation/0g-storage-ts-sdk':
-        specifier: ^1.2.10
-        version: 1.2.10(bufferutil@4.1.0)(debug@4.4.3)(ethers@6.17.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)
-      '@modelcontextprotocol/client':
-        specifier: ^2.0.0-beta.5
-        version: 2.0.0-beta.5
-      '@modelcontextprotocol/node':
-        specifier: ^2.0.0-beta.5
-        version: 2.0.0-beta.5(@modelcontextprotocol/server@2.0.0-beta.5)(hono@4.12.31)
-      '@modelcontextprotocol/server':
-        specifier: ^2.0.0-beta.5
-        version: 2.0.0-beta.5
-      dotenv:
-        specifier: ^16.5.0
-        version: 16.6.1
-      ethers:
-        specifier: ^6.17.0
-        version: 6.17.0(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      hors-client:
-        specifier: workspace:*
-        version: link:../../packages/hors-client
-      hors-core:
-        specifier: workspace:*
-        version: link:../../packages/hors-core
-      hors-executor-0g:
-        specifier: workspace:*
-        version: link:../../packages/hors-executor-0g
-      hors-server:
-        specifier: workspace:*
-        version: link:../../packages/hors-server
-      viem:
-        specifier: ^2.55.8
-        version: 2.55.8(bufferutil@4.1.0)(typescript@7.0.2)(utf-8-validate@5.0.10)(zod@4.4.3)
-      zod:
-        specifier: ^4.2.0
-        version: 4.4.3
-    devDependencies:
-      '@types/node':
-        specifier: ^22.15.0
-        version: 22.20.1
       tsx:
         specifier: ^4.19.4
         version: 4.23.1

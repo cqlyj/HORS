@@ -94,8 +94,9 @@ hors call <service> <function> '{"key":"value"}'
 ```
 
 If the inspected policy requires `selfie` or `identity`, do not execute this
-command as the agent. Render the complete, shell-quoted command for the user to
-run in their own visible terminal and pause. See the assurance handoff below.
+command in a hidden or non-interactive agent shell. Render the complete,
+shell-quoted command for the user to run in their own visible terminal and
+pause. See the assurance handoff below.
 
 Before a call with financial, destructive, publication, privacy, or other
 external side effects, obtain confirmation unless the user's request already
@@ -120,21 +121,21 @@ that the user must run it in their visible terminal because the human owns the
 World App assurance interaction. Never fabricate a proof or scan a QR on the
 user's behalf.
 
-If the goal is only to demonstrate policy enforcement, ask the user to run the
-command and confirm that it prints `Step-up required` with the expected
+The current direct CLI completes the human handoff in a visible TTY: it renders
+the World App QR, polls for the IDKit result, and automatically resumes the MCP
+request with `inputResponses` and the authenticated `requestState`. The user
+should wait for the final HORS diagnostic rather than rerun the command after
+scanning.
+
+If the goal is only to demonstrate policy enforcement, the user may cancel
+after confirming that the CLI prints `Step-up required` with the expected
 assurance type. That is a successful gate demonstration, not a completed
 function execution.
 
-The current direct CLI prints a challenge and `requestState`, but it has no
-dedicated `approve` command and does not render or complete the Selfie/Identity
-QR flow. If the user wants full completion, require an already configured
-human-facing assurance client. Otherwise stop after the gate demonstration and
-state that current limitation plainly.
-
 Do not ask the user to paste raw proof JSON or `requestState` into chat. Do not
 put proof JSON in a command line; `--proof` exposes it through shell history and
-process arguments. Let the user-visible assurance client own the proof and the
-resumed call.
+process arguments. Let the user-visible CLI own the proof, polling, and resumed
+call.
 
 ### 7. Present the demo result
 
